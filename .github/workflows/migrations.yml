@@ -58,10 +58,10 @@ jobs:
               -F "ref=main" \
               -F "variables[DB_MIGRATION_STATUS]=FAILED"
 
-      - name: Slack Notification
-        if: failure()
-        run: |
-          curl -X POST \
-          -H "Content-Type: application/json" \
-          --data '{"text":"Database Migration Failed"}' \
-          ${{ secrets.SLACK_WEBHOOK }}
+     - name: Slack Notification
+     if: failure()
+     run: |
+       curl -X POST \
+       -H "Content-Type: application/json" \
+      --data '{"text":"Database Migration Failed"}' \
+      "${{ secrets.SLACK_WEBHOOK }}"
