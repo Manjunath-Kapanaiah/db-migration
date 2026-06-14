@@ -1,20 +1,15 @@
+---
 name: Database Migration
-
 on:
   push:
     paths:
-      - 'migrations/schema.sql'
-
+      - migrations/schema.sql
 jobs:
   migrate:
-
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
-
       - name: Validate SQL File
         run: |
           echo "Checking schema.sql"
@@ -23,45 +18,37 @@ jobs:
             echo "schema.sql not found"
             exit 1
           fi
-
       - name: Execute Migration
         run: |
-          mkdir logs
-
+          mkdir -p logs
           echo "Migration Started" > logs/migration.log
-
           cat migrations/schema.sql >> logs/migration.log
-
           echo "Migration Completed Successfully" >> logs/migration.log
-
       - name: Upload Migration Logs
         uses: actions/upload-artifact@v4
         with:
           name: migration-logs
           path: logs/migration.log
-
+      - name: Notify GitLab Success
+        if: success()
+        run: >
+          curl -X POST \
+            "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
+            -F "token=$GITLAB_TRIGGER_TOKEN" \
+            -F "ref=main" \
+            -F "variables[DB_MIGRATION_STATUS]=SUCCESS"
       - name: Notify GitLab Failure
         if: failure()
-        run: |
-           curl -X POST \
-               "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
-               -F "token=$GITLAB_TRIGGER_TOKEN" \
-              -F "ref=main" \
-              -F "variables[DB_MIGRATION_STATUS]=FAILED"
-
-      - name: Notify GitLab Failure
+        run: >
+          curl -X POST \
+            "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
+            -F "token=$GITLAB_TRIGGER_TOKEN" \
+            -F "ref=main" \
+            -F "variables[DB_MIGRATION_STATUS]=FAILED"
+      - name: Slack Notification
         if: failure()
         run: |
-         curl -X POST \
-               "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
-               -F "token=$GITLAB_TRIGGER_TOKEN" \
-              -F "ref=main" \
-              -F "variables[DB_MIGRATION_STATUS]=FAILED"
-
-     - name: Slack Notification
-     if: failure()
-     run: |
-       curl -X POST \
-       -H "Content-Type: application/json" \
-      --data '{"text":"Database Migration Failed"}' \
-      "${{ secrets.SLACK_WEBHOOK }}"
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            --data '{"text":"Database Migration Failed"}' \
+            "${{ secrets.SLACK_WEBHOOK }}"
