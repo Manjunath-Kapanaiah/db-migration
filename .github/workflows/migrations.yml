@@ -29,7 +29,7 @@ jobs:
         with:
           name: migration-logs
           path: logs/migration.log
-      - name: Notify GitLab Success
+      - name: Trigger GitLab API
         if: success()
         run: >
           curl -X POST \
