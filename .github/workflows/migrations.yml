@@ -43,19 +43,19 @@ jobs:
       - name: Notify GitLab Success
         if: success()
         run: |
-          curl --request POST \
-          "${{ vars.GITLAB_URL }}/api/v4/projects/${{ vars.API_PROJECT_ID }}/trigger/pipeline" \
-          --form token=${{ secrets.GITLAB_TRIGGER_TOKEN }} \
-          --form ref=main \
+          curl -X POST \
+  "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
+  -F "token=$GITLAB_TRIGGER_TOKEN" \
+  -F "ref=main"
           --form "variables[DB_MIGRATION_STATUS]=SUCCESS"
 
       - name: Notify GitLab Failure
         if: failure()
         run: |
-          curl --request POST \
-          "${{ vars.GITLAB_URL }}/api/v4/projects/${{ vars.API_PROJECT_ID }}/trigger/pipeline" \
-          --form token=${{ secrets.GITLAB_TRIGGER_TOKEN }} \
-          --form ref=main \
+         curl -X POST \
+  "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
+  -F "token=$GITLAB_TRIGGER_TOKEN" \
+  -F "ref=main"
           --form "variables[DB_MIGRATION_STATUS]=FAILED"
 
       - name: Slack Notification
