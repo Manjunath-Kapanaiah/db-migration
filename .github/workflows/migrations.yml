@@ -6,30 +6,62 @@ on:
       - 'migrations/schema.sql'
 
 jobs:
-
   migrate:
 
     runs-on: ubuntu-latest
 
     steps:
 
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Validate SQL File
+        run: |
+          echo "Checking schema.sql"
+
+          if [ ! -f migrations/schema.sql ]; then
+            echo "schema.sql not found"
+            exit 1
+          fi
 
       - name: Execute Migration
         run: |
           mkdir logs
-          echo "Migration Successful" > logs/migration.log
 
-      - name: Upload Artifact
+          echo "Migration Started" > logs/migration.log
+
+          cat migrations/schema.sql >> logs/migration.log
+
+          echo "Migration Completed Successfully" >> logs/migration.log
+
+      - name: Upload Migration Logs
         uses: actions/upload-artifact@v4
         with:
           name: migration-logs
           path: logs/migration.log
 
-      - name: Trigger API Pipeline
+      - name: Notify GitLab Success
+        if: success()
         run: |
           curl --request POST \
-          "${{ secrets.GITLAB_URL }}/api/v4/projects/${{ secrets.API_PROJECT_ID }}/trigger/pipeline" \
+          "${{ vars.GITLAB_URL }}/api/v4/projects/${{ vars.API_PROJECT_ID }}/trigger/pipeline" \
           --form token=${{ secrets.GITLAB_TRIGGER_TOKEN }} \
           --form ref=main \
           --form "variables[DB_MIGRATION_STATUS]=SUCCESS"
+
+      - name: Notify GitLab Failure
+        if: failure()
+        run: |
+          curl --request POST \
+          "${{ vars.GITLAB_URL }}/api/v4/projects/${{ vars.API_PROJECT_ID }}/trigger/pipeline" \
+          --form token=${{ secrets.GITLAB_TRIGGER_TOKEN }} \
+          --form ref=main \
+          --form "variables[DB_MIGRATION_STATUS]=FAILED"
+
+      - name: Slack Notification
+        if: failure()
+        run: |
+          curl -X POST \
+          -H "Content-Type: application/json" \
+          --data '{"text":"Database Migration Failed"}' \
+          ${{ secrets.SLACK_WEBHOOK }}
