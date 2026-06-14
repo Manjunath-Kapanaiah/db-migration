@@ -40,23 +40,23 @@ jobs:
           name: migration-logs
           path: logs/migration.log
 
-      - name: Notify GitLab Success
-        if: success()
+      - name: Notify GitLab Failure
+        if: failure()
         run: |
-          curl -X POST \
-  "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
-  -F "token=$GITLAB_TRIGGER_TOKEN" \
-  -F "ref=main"
-          --form "variables[DB_MIGRATION_STATUS]=SUCCESS"
+           curl -X POST \
+               "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
+               -F "token=$GITLAB_TRIGGER_TOKEN" \
+              -F "ref=main" \
+              -F "variables[DB_MIGRATION_STATUS]=FAILED"
 
       - name: Notify GitLab Failure
         if: failure()
         run: |
          curl -X POST \
-  "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
-  -F "token=$GITLAB_TRIGGER_TOKEN" \
-  -F "ref=main"
-          --form "variables[DB_MIGRATION_STATUS]=FAILED"
+               "https://gitlab.com/api/v4/projects/$API_PROJECT_ID/trigger/pipeline" \
+               -F "token=$GITLAB_TRIGGER_TOKEN" \
+              -F "ref=main" \
+              -F "variables[DB_MIGRATION_STATUS]=FAILED"
 
       - name: Slack Notification
         if: failure()
