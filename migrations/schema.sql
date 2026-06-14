@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Orders Table
+-- Create Orders Table ---
 
 CREATE TABLE IF NOT EXISTS orders (
     order_id INT PRIMARY KEY,
