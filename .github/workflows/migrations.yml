@@ -13,43 +13,23 @@ jobs:
 
     steps:
 
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Run Migration
+      - name: Execute Migration
         run: |
-          echo "Running DB migration"
           mkdir logs
           echo "Migration Successful" > logs/migration.log
 
-      - name: Upload Logs
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: migration-logs
           path: logs/migration.log
 
-      - name: Notify GitLab Success
-        if: success()
+      - name: Trigger API Pipeline
         run: |
           curl --request POST \
           "${{ secrets.GITLAB_URL }}/api/v4/projects/${{ secrets.API_PROJECT_ID }}/trigger/pipeline" \
           --form token=${{ secrets.GITLAB_TRIGGER_TOKEN }} \
           --form ref=main \
           --form "variables[DB_MIGRATION_STATUS]=SUCCESS"
-
-      - name: Notify GitLab Failure
-        if: failure()
-        run: |
-          curl --request POST \
-          "${{ secrets.GITLAB_URL }}/api/v4/projects/${{ secrets.API_PROJECT_ID }}/trigger/pipeline" \
-          --form token=${{ secrets.GITLAB_TRIGGER_TOKEN }} \
-          --form ref=main \
-          --form "variables[DB_MIGRATION_STATUS]=FAILED"
-
-      - name: Slack Alert
-        if: failure()
-        run: |
-          curl -X POST \
-          -H "Content-type: application/json" \
-          --data '{"text":"Database migration failed"}' \
-          ${{ secrets.SLACK_WEBHOOK }}
